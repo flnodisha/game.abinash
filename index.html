@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Detector</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Function to detect if the device is mobile or tablet
+            function isMobile() {
+                const userAgent = navigator.userAgent.toLowerCase();
+                return /iphone|ipad|android|mobile/.test(userAgent);
+            }
+
+            // Redirect based on the device type
+            if (isMobile()) {
+                window.location.href = "quizodia/quizmobile.html"; // Replace with your mobile page
+            } else {
+                window.location.href = "quizodia/quizdestop.html"; // Replace with your desktop page
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Redirecting to the appropriate page...</h1>
+</body>
+</html>
