@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Picture Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+
+        header {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .quiz-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        .quiz-title {
+            text-align: center;
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 30px;
+            min-height: 60px; /* Added to prevent layout shift */
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .option {
+            aspect-ratio: 1;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.3s;
+            background-color: #f5b5b5;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 2px solid #eee;
+        }
+
+        .option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .option.shake {
+            animation: shake 0.5s;
+        }
+
+        .option.correct {
+            animation: popup 0.5s ease forwards;
+        }
+
+        .score-section {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-item img {
+            width: 24px;
+            height: 24px;
+        }
+
+        #scoreboard {
+            display: none;
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        #scoreboard button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #scoreboard button:hover {
+            background-color: #45a049;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content button {
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s;
+        }
+
+        .modal-content .yes {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .modal-content .no {
+            background-color: #f44336;
+            color: white;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes popup {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .quiz-container {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            .quiz-title {
+                font-size: 1.5rem;
+            }
+
+            .options {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .score-section {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header style="width: 100%; text-align: center; background-color: #ec4646; color: white; padding: 20px; font-size: 1.5rem; position: fixed; top: 0; left: 0;">
+        କହିଲ ଦେଖି ?
+    </header>
+    <div class="quiz-container" style="margin-top: 40px;">
+        <h1 class="quiz-title">ପ୍ରଶ୍ନ</h1>
+        
+        <div class="score-section">
+            <div class="score-item">
+                <img src="correct.png" alt="Correct Icon">
+                <span id="correctScore">0</span>
+            </div>
+            <div class="score-item">
+                <img src="wrong.png" alt="Wrong Icon">
+                <span id="wrongScore">0</span>
+            </div>
+        </div>
+
+        <div class="options" id="options"></div>
+    </div>
+
+    <div id="scoreboard">
+        <h2>କୁଇଜ୍ ଶେଷ ହେଲା !</h2>
+        <p>ସଠିକ ଉତ୍ତର: <span id="finalCorrectScore">0</span></p>
+        <p>ଭୁଲ ଉତ୍ତର: <span id="finalWrongScore">0</span></p>
+        <button onclick="restartQuiz()">ପୁଣିଥରେ</button>
+    </div>
+
+    <div id="exitModal" class="modal">
+        <div class="modal-content">
+            <p>Do you want to exit?</p>
+            <button class="yes" onclick="confirmExit(true)">Yes</button>
+            <button class="no" onclick="confirmExit(false)">No</button>
+        </div>
+    </div>
+
+    <audio id="questionAudio" src="which_animal_is.mp3" type="audio/mp3"></audio>
+    <audio id="correctSound" src="correct.mp3" type="audio/mp3"></audio>
+    <audio id="wrongSound" src="wrong.mp3" type="audio/mp3"></audio>
+    <audio id="animalNameAudio" src="" type="audio/mp3"></audio>
+
+    <script>
+        const questionTitles = {
+            "lion.mp3": "ସିଂହ?",
+            "fox.mp3": "ବିଲୁଆ?",
+            "cow.mp3": "ଗାଈ?",
+            "monkey.mp3": "ମାଙ୍କଡ?",
+            "buffalo.mp3": "ମଇଁଷି?",
+            "kangaroo.mp3": "କାଙ୍ଗାରୁ?",
+            "elephant.mp3": "ହାତୀ?",
+            "giraffe.mp3": "ଜିରାଫ୍?",
+            "goat.mp3": "ଛେଳି?",
+            "horse.mp3": "ଘୋଡା?",
+            "wolf.mp3": "ଗଧିଆ?",
+            "zebra.mp3": "ଜେବ୍ରା?",
+            "hippopotamus.mp3": "ପାଣିହାତୀ?",
+            "dog.mp3": "କୁକୁର?",
+            "tiger.mp3": "ବାଘ?",
+            "cat.mp3": "ବିରାଡି?",
+            "sheep.mp3": "ମେଣ୍ଢା?"
+        };
+
+        const questions = [
+            {
+                correctIndex: 0,
+                options: [
+                    "animal_lion.webp",
+                    "animal_tiger.webp",
+                    "animal_elephant.webp",
+                    "animal_fox.webp"
+                ],
+                animalName: "lion.mp3"
+            },
+            {
+                correctIndex: 1,
+                options: [
+                    "animal_lion.webp",
+                    "animal_fox.webp",
+                    "animal_elephant.webp",
+                    "animal_tiger.webp"
+                ],
+                animalName: "fox.mp3"
+            },
+            {
+                correctIndex: 2,
+                options: [
+                    "animal_cat.webp",
+                    "animal_dog.webp",
+                    "animal_cow.webp",
+                    "animal_goat.webp"
+                ],
+                animalName: "cow.mp3"
+            },
+            {
+                correctIndex: 3,
+                options: [
+                    "animal_giraffe.webp",
+                    "animal_elephant.webp",
+                    "animal_horse.webp",
+                    "animal_monkey.webp"
+                ],
+                animalName: "monkey.mp3"
+            },
+            {
+                correctIndex: 0,
+                options: [
+                    "animal_buffalo.webp",
+                    "animal_zebra.webp",
+                    "animal_hippopotamus.webp",
+                    "animal_sheep.webp"
+                ],
+                animalName: "buffalo.mp3"
+            },
+            {
+                correctIndex: 2,
+                options: [
+                    "animal_dog.webp",
+                    "animal_lion.webp",
+                    "animal_kangaroo.webp",
+                    "animal_wolf.webp"
+                ],
+                animalName: "kangaroo.mp3"
+            },
+            {
+                correctIndex: 1,
+                options: [
+                    "animal_giraffe.webp",
+                    "animal_elephant.webp",
+                    "animal_horse.webp",
+                    "animal_lion.webp"
+                ],
+                animalName: "elephant.mp3"
+            },
+            {
+                correctIndex: 3,
+                options: [
+                    "animal_fox.webp",
+                    "animal_cat.webp",
+                    "animal_wolf.webp",
+                    "animal_giraffe.webp"
+                ],
+                animalName: "giraffe.mp3"
+            },
+            {
+                correctIndex: 0,
+                options: [
+                    "animal_goat.webp",
+                    "animal_buffalo.webp",
+                    "animal_dog.webp",
+                    "animal_sheep.webp"
+                ],
+                animalName: "goat.mp3"
+            },
+            {
+                correctIndex: 2,
+                options: [
+                    "animal_hippopotamus.webp",
+                    "animal_kangaroo.webp",
+                    "animal_horse.webp",
+                    "animal_lion.webp"
+                ],
+                animalName: "horse.mp3"
+            },
+            {
+                correctIndex: 3,
+                options: [
+                    "animal_dog.webp",
+                    "animal_lion.webp",
+                    "animal_tiger.webp",
+                    "animal_wolf.webp"
+                ],
+                animalName: "wolf.mp3"
+            },
+            {
+                correctIndex: 1,
+                options: [
+                    "animal_monkey.webp",
+                    "animal_zebra.webp",
+                    "animal_hippopotamus.webp",
+                    "animal_giraffe.webp"
+                ],
+                animalName: "zebra.mp3"
+            },
+            {
+                correctIndex: 0,
+                options: [
+                    "animal_hippopotamus.webp",
+                    "animal_fox.webp",
+                    "animal_cat.webp",
+                    "animal_goat.webp"
+                ],
+                animalName: "hippopotamus.mp3"
+            },
+            {
+                correctIndex: 2,
+                options: [
+                    "animal_tiger.webp",
+                    "animal_sheep.webp",
+                    "animal_dog.webp",
+                    "animal_monkey.webp"
+                ],
+                animalName: "dog.mp3"
+            },
+            {
+                correctIndex: 1,
+                options: [
+                    "animal_sheep.webp",
+                    "animal_tiger.webp",
+                    "animal_buffalo.webp",
+                    "animal_elephant.webp"
+                ],
+                animalName: "tiger.mp3"
+            },
+            {
+                correctIndex: 3,
+                options: [
+                    "animal_wolf.webp",
+                    "animal_fox.webp",
+                    "animal_cow.webp",
+                    "animal_cat.webp"
+                ],
+                animalName: "cat.mp3"
+            },
+            {
+                correctIndex: 2,
+                options: [
+                    "animal_zebra.webp",
+                    "animal_dog.webp",
+                    "animal_kangaroo.webp",
+                    "animal_monkey.webp"
+                ],
+                animalName: "kangaroo.mp3"
+            },
+            {
+                correctIndex: 0,
+                options: [
+                    "animal_sheep.webp",
+                    "animal_horse.webp",
+                    "animal_giraffe.webp",
+                    "animal_lion.webp"
+                ],
+                animalName: "sheep.mp3"
+            }
+        ];
+
+        
+
+        let currentQuestionIndex = 0;
+        let correctScore = 0;
+        let wrongScore = 0;
+        let firstAttempt = true;
+        let repeatInterval;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        shuffle(questions);
+
+        function updateScoreCounter() {
+            document.getElementById('correctScore').textContent = correctScore;
+            document.getElementById('wrongScore').textContent = wrongScore;
+        }
+
+        function playQuestionAudio(questionData) {
+            const questionAudio = document.getElementById('questionAudio');
+            const animalNameAudio = document.getElementById('animalNameAudio');
+
+            questionAudio.play();
+            questionAudio.onended = () => {
+                animalNameAudio.src = questionData.animalName;
+                animalNameAudio.play();
+            };
+        }
+
+        function loadQuestion() {
+    const questionData = questions[currentQuestionIndex];
+    const optionsContainer = document.getElementById('options');
+    optionsContainer.innerHTML = '';
+    firstAttempt = true;
+
+    // Update the title based on the current animal
+    document.querySelector('.quiz-title').textContent = questionTitles[questionData.animalName] || "ପ୍ରଶ୍ନ";
+
+    if (repeatInterval) {
+        clearInterval(repeatInterval);
+    }
+
+    playQuestionAudio(questionData);
+
+    repeatInterval = setInterval(() => {
+        playQuestionAudio(questionData);
+    }, 8000);
+
+            questionData.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+                const img = document.createElement('img');
+                img.src = option;
+                optionElement.appendChild(img);
+                optionsContainer.appendChild(optionElement);
+
+                optionElement.addEventListener('click', () => {
+                    const correctSound = document.getElementById('correctSound');
+                    const wrongSound = document.getElementById('wrongSound');
+
+                    if (index === questionData.correctIndex) {
+                        optionElement.classList.add('correct');
+                        if (firstAttempt) {
+                            correctScore++;
+                        }
+                        correctSound.play();
+                        updateScoreCounter();
+                        clearInterval(repeatInterval);
+                        setTimeout(() => {
+                            optionElement.style.display = 'none';
+                            currentQuestionIndex++;
+                            if (currentQuestionIndex < questions.length) {
+                                loadQuestion();
+                            } else {
+                                displayScoreboard();
+                            }
+                        }, 800);
+                    } else {
+                        optionElement.classList.add('shake');
+                        if (firstAttempt) {
+                            wrongScore++;
+                        }
+                        firstAttempt = false;
+                        wrongSound.play();
+                        updateScoreCounter();
+                        setTimeout(() => {
+                            optionElement.classList.remove('shake');
+                        }, 500);
+                    }
+                });
+            });
+        }
+
+        function displayScoreboard() {
+            document.querySelector('.quiz-container').style.display = 'none';
+            document.getElementById('scoreboard').style.display = 'block';
+            document.getElementById('finalCorrectScore').textContent = correctScore;
+            document.getElementById('finalWrongScore').textContent = wrongScore;
+            if (repeatInterval) {
+                clearInterval(repeatInterval);
+            }
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            correctScore = 0;
+            wrongScore = 0;
+            firstAttempt = true;
+            updateScoreCounter();
+            document.querySelector('.quiz-container').style.display = 'block';
+            document.getElementById('scoreboard').style.display = 'none';
+            shuffle(questions);
+            loadQuestion();
+        }
+
+        function goBack() {
+            document.getElementById('exitModal').style.display = 'flex';
+        }
+
+        function confirmExit(choice) {
+            if (choice) {
+                window.history.back();
+            } else {
+                document.getElementById('exitModal').style.display = 'none';
+            }
+        }
+
+        // Add event listener for back button
+        window.addEventListener('popstate', function(event) {
+            event.preventDefault();
+            goBack();
+        });
+
+        // Initialize the quiz
+        loadQuestion();
+    </script>
+</body>
+</html>
